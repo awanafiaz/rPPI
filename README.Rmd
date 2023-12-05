@@ -16,9 +16,16 @@ knitr::opts_chunk$set(
 # rPPI
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/awanafiaz/rPPI/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/awanafiaz/rPPI/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of rPPI is to ...
+## <img src="man/figures/PPI_logo.png" align="right" height="200" style="float:right; height:200px;">
+
+
+Increased emphasis on reproducibility in study design and statistical analysis has both prompted and necessitated national efforts to make large-scale data sources widely available. With nationally representative survey data available now more than ever, researchers can answer more complex scientific questions with improved generalizability and statistical precision. With the rise in interest in causal inference, a branch of statistics dedicated to understanding dynamic cause-and-effect mechanisms, there has been a corresponding shift in focus toward making causal statements using complex survey data.
+
+Drawing causal conclusions from observational data requires careful considerations of both the appropriate quantity to estimate and the rigor of statistical methods to achieve this end. The `svyate` package introduces a novel strategy for incorporating sampling mechanisms such as survey weights in a statistically valid analysis to make causal statements when an individual’s probability of selection depends on the treatment or characteristic of interest.
+
 
 ## Installation
 
