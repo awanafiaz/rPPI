@@ -74,9 +74,10 @@ validation set. Here we will consider them to be equal for brevity.
   function.
 - We specify, $(\beta_1, \beta_2, \beta_3, \beta_4) = (1, 0.5, 3, 4)$.
 
-(iii). Our interest is in performing inference on $H_0: \beta_1 = 0$ vs
-$H_1: \beta_1 \ne 0$. That is our inference model is
-$Y_{val} = \beta_0^* + \beta_1^* X_{val} + \epsilon^*$.
+(iii). Our interest is in performing inference on $H_0: \beta_1^* = 0$
+vs $H_1: \beta_1^* \ne 0$. That is, our inference model is
+$Y_{val} = \beta_0^* + \beta_1^* X_{val} + \epsilon^*$, where
+$\epsilon^* = N(0, 1)$.
 
 (iv). However, we do not observe $Y_{val}$. We instead only have access
 to the predicted $\hat Y_{val} = f(X_{val})$.
