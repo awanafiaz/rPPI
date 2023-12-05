@@ -72,8 +72,7 @@ validation set. Here we will consider them to be equal for brevity.
   $Y = \beta_1X_1 + \beta_2 X_2 + \beta_3 \ g(X_3) + \beta_4 \ g(X_4) + \epsilon,$
   where, $\epsilon = N(0, 1)$ and $g(\cdot)$ refers to some smoothing
   function.
-- We specify,
-  $\beta = \begin{bmatrix} \beta_1 \\ \beta_2 \\ \beta_3 \\ \beta_4 \end{bmatrix} = \begin{bmatrix} 1 \\ 0.5 \\ 3 \\ 4 \end{bmatrix}$.
+- We specify, $(\beta_1, \beta_2, \beta_3, \beta_4) = (1, 0.5, 3, 4)$.
 
 (iii). Our interest is in performing inference on $H_0: \beta_1 = 0$ vs
 $H_1: \beta_1 \ne 0$. That is our inference model is
