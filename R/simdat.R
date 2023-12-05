@@ -2,6 +2,7 @@
 #'
 #' @param n vector of size 3 indicating the sample size in the training, labelled, and unlabelled data sets
 #' @param beta1 first regression coefficient (or, regression coefficient of variable of interest for inference)
+#  @inheritParams gam::gam
 #'
 #' @return A data frame
 #'

@@ -1,10 +1,10 @@
 Package: rPPI
-Title: What the Package Does (One Line, Title Case)
+Title: Perform Valid and Efficient Statistical Post-Prediction Inference (PPI) using State-of-the-art Methods
 Version: 0.0.0.9000
 Authors@R: 
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: A comprehensive package for peforming valid inference on variables of interest that covers all extant state-of-the-art methods. You need only provide the predicted data for the unlabeled data set along with method-specific parameters or models, and the package will take care of the rest!
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
