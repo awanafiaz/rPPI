@@ -1,8 +1,4 @@
 
-<style>
-body {
-text-align: justify}
-</style>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # rPPI
@@ -67,7 +63,7 @@ which we call the **validation set** $(X_{val)}$. Typically the the
 labeled test set will be smaller in size compared to the unlabeled
 validation set. Here we will consider them to be equal for brevity.
 
-- We consider $X = (X_1, X_2, X_3, X_4)$ and $y$ is a scalar.
+- We consider $X = (X_1, X_2, X_3, X_4)$ and $Y$ is a scalar.
 - The true data generating mechanism is
   $Y = \beta_1X_1 + \beta_2 X_2 + \beta_3 \ g(X_3) + \beta_4 \ g(X_4) + \epsilon,$
   where, $\epsilon = N(0, 1)$ and $g(\cdot)$ refers to some smoothing
