@@ -23,7 +23,7 @@ features of interest (e.g., X1 + X2).}
 A list of outputs: estimate of inference model parameters and corresponding standard error.
 }
 \description{
-A short description...
+A short description.
 }
 \details{
 Additional details...

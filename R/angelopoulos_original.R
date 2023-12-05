@@ -46,7 +46,7 @@
 #'
 #' @param dat data in the form of the simdat function output
 #'
-#' @returns A list of outputs: estimate of inference model parameters and corresponding standard error based on both parametric and non-parametric bootstrap methods.
+#' @returns A list of outputs: estimate of inference model parameters and corresponding standard errors
 #'
 #' @examples
 #'

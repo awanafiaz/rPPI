@@ -2,6 +2,8 @@
 
 export("%>%")
 export(angelopoulos_original)
+export(leanpostpi)
+export(ppi_ols_ci)
 export(simdat)
 export(wang_analytic)
 export(wang_boot)
