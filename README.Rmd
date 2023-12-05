@@ -21,7 +21,9 @@ knitr::opts_chunk$set(
 
 ## <img src="man/figures/PPI_logo.png" align="right" height="200" style="float:right; height:200px;">
 
-With the rapid advancement of artificial intelligence (AI) and machine learning (ML) methods and owing to financial and domain-specific restrictions, researchers from wide variety of disciplines are now increasingly using predictions from pre-trained algorithms as outcome variables in statistical analyses. However, such practices have been shown to produce biased estimates and misleading inference [Wang et al., 2020](https://www.pnas.org/doi/suppl/10.1073/pnas.2001238117). The statistical challenges encountered in post-prediction inference (PPI) include (i) correct specification of the relationship between predicted outcomes and their true unobserved counterparts, (ii) robustness of the ML models to resampling or uncertainty about the training data, and (iii) appropriately propagating both bias and uncertainty from predictions into downstream inferential tasks. 
+With the rapid advancement of artificial intelligence (AI) and machine learning (ML) methods and owing to financial and domain-specific restrictions, researchers from wide variety of disciplines are now increasingly using predictions from pre-trained algorithms as outcome variables in statistical analyses. However, such practices have been shown to produce biased estimates and misleading inference [Wang et al., 2020](https://www.pnas.org/doi/suppl/10.1073/pnas.2001238117). The
+statistical challenges encountered in post-prediction inference (PPI) include: (a) correct specification of the relationship between predicted outcomes and their true unobserved counterparts, (b) robustness of the ML models to resampling or uncertainty about the training data, and (c) appropriately propagating both bias and uncertainty from
+predictions into downstream inferential tasks.
 
 Since the seminal work from [Wang et al.](https://www.pnas.org/doi/suppl/10.1073/pnas.2001238117), published in only 2020, multiple newer methods have been developed in quick succession as researchers are increasingly putting more focus on this new paradigm of statistical inference. Since each methods has their own set of advantages and restrictions, we develop the `rPPI` package to provide logistical software support to practitioners by allowing them to utilize all extant methods under the umbrella of a single `r`package. 
 
@@ -31,27 +33,31 @@ To make the utilization of the package convenient for users, we provide guidance
 
 You can install the development version of rPPI from [GitHub](https://github.com/) with:
 
-``` r
+```{r, eval = F}
 # install.packages("devtools")
 devtools::install_github("awanafiaz/rPPI")
 ```
 
-## Example
+## Usage
 
-This is a basic example which shows you how to solve a common problem:
+We provide a simple example to demonstrate the basic use of the functions included in `rPPI`.
 
-```{r example}
+```{r example, eval = F}
 library(rPPI)
 ## basic example code
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+## Vignette 
 
-```{r cars}
-summary(cars)
+For more advanced users and researchers, we provide more use cases and examples in the package `vignettes`. 
+
+```{r, eval = F}
+vignette("rPPI")
 ```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
+This will provide an extensive tutorial on `rPPI` and will demonstrate how to use it.
 
+## Feedback
 
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
+For questions and comments or any other feedback, please contact the developers.
+
