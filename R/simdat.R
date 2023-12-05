@@ -27,7 +27,7 @@ simdat <- function(n = c(300, 300, 300), beta1 = 1) {
 
   dat <- data.frame(X1, X2, X3, X4, Y, Yhat = NA, set)
 
-  fit_gam <- gam(Y ~ s(X1) + s(X2) + s(X3) + s(X4), data = dat[set == "trn",])
+  fit_gam <- gam::gam(Y ~ s(X1) + s(X2) + s(X3) + s(X4), data = dat[set == "trn",])
 
   dat[set == "tst", "Yhat"] <- predict(fit_gam, newdat = dat[set == "tst",])
 
