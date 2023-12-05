@@ -12,3 +12,5 @@ RoxygenNote: 7.2.3
 Imports: 
     gam,
     stats
+URL: https://github.com/awanafiaz/rPPI
+BugReports: https://github.com/awanafiaz/rPPI/issues
