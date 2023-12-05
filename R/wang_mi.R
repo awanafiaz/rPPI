@@ -55,7 +55,7 @@
 #'
 #' @param scale_sigmar logical: scale sigma_r or not
 #'
-#' @returns description
+#' @returns @returns A list of outputs: estimate of inference model parameters and corresponding standard error.
 #'
 #' @examples
 #'

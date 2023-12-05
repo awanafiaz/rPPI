@@ -24,7 +24,7 @@ features of interest (e.g., X1 + X2).}
 \item{rel_func}{relationship function model form (lm, gam, glm, etc)}
 }
 \value{
-description
+A list of outputs: estimate of inference model parameters and corresponding standard error based on both parametric and non-parametric bootstrap methods.
 }
 \description{
 A short description...

@@ -20,7 +20,7 @@ features of interest (e.g., X1 + X2).}
 \item{dat}{data in the form of the simdat function}
 }
 \value{
-description
+A list of outputs: estimate of inference model parameters and corresponding standard error.
 }
 \description{
 A short description...

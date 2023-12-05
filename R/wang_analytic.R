@@ -32,7 +32,7 @@
 #' PPI Linear Regression using Wang et al. (2020) Analytic Correction
 #'
 #' @description
-#' A short description...
+#' A short description.
 #'
 #' @details
 #' Additional details...
@@ -49,7 +49,8 @@
 #'
 #' @param dat data in the form of the simdat function
 #'
-#' @returns description
+#' @returns A list of outputs: estimate of inference model parameters and corresponding standard error.
+#'
 #'
 #' @examples
 #'

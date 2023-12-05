@@ -46,7 +46,7 @@
 #'
 #' @param dat data in the form of the simdat function output
 #'
-#' @returns a list with linear regression parameter estimate and standard error.
+#' @returns A list of outputs: estimate of inference model parameters and corresponding standard error based on both parametric and non-parametric bootstrap methods.
 #'
 #' @examples
 #'

@@ -53,7 +53,7 @@
 #'
 #' @param rel_func relationship function model form (lm, gam, glm, etc)
 #'
-#' @returns description
+#' @returns A list of outputs: estimate of inference model parameters and corresponding standard error based on both parametric and non-parametric bootstrap methods.
 #'
 #' @examples
 #'

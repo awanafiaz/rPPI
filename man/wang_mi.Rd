@@ -26,7 +26,7 @@ features of interest (e.g., X1 + X2).}
 \item{scale_sigmar}{logical: scale sigma_r or not}
 }
 \value{
-description
+@returns A list of outputs: estimate of inference model parameters and corresponding standard error.
 }
 \description{
 A short description...
