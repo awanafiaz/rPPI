@@ -10,8 +10,8 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports: 
-    gam (>= 1.22.2),
-    stats (>= 4.3.2)
+    gam,
+    stats
 URL: https://github.com/awanafiaz/rPPI
 BugReports: https://github.com/awanafiaz/rPPI/issues
 Suggests: 
