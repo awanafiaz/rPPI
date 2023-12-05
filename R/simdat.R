@@ -4,11 +4,12 @@
 #' @param beta1 first regression coefficient (or, regression coefficient of variable of interest for inference)
 #  @inheritParams gam::gam
 #'
-#' @return A data frame
+#' @return A data frame containing 4 regressors, labelled outcome, predicted outcome and a character variable indicating which dat set the observartion belongs to (training, test, validation).
 #'
 #' @export
 #'
 #' @import stats gam
+#'
 #'
 #' @examples
 #' simdat(c(100, 100, 100), 1)
@@ -16,7 +17,7 @@
 
 
 simdat <- function(n = c(300, 300, 300), beta1 = 1) {
-  #require(gam)
+
   X1 <- rnorm(sum(n), 1)
   X2 <- rnorm(sum(n), 1)
   X3 <- rnorm(sum(n), 1)

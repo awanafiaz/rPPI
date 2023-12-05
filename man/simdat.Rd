@@ -12,7 +12,7 @@ simdat(n = c(300, 300, 300), beta1 = 1)
 \item{beta1}{first regression coefficient (or, regression coefficient of variable of interest for inference)}
 }
 \value{
-A data frame
+A data frame containing 4 regressors, labelled outcome, predicted outcome and a character variable indicating which dat set the observartion belongs to (training, test, validation).
 }
 \description{
 Data generation for examples
