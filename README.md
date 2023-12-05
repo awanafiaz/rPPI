@@ -10,23 +10,32 @@
 
 ## <img src="man/figures/PPI_logo.png" align="right" height="200" style="float:right; height:200px;">
 
-Increased emphasis on reproducibility in study design and statistical
-analysis has both prompted and necessitated national efforts to make
-large-scale data sources widely available. With nationally
-representative survey data available now more than ever, researchers can
-answer more complex scientific questions with improved generalizability
-and statistical precision. With the rise in interest in causal
-inference, a branch of statistics dedicated to understanding dynamic
-cause-and-effect mechanisms, there has been a corresponding shift in
-focus toward making causal statements using complex survey data.
+With the rapid advancement of artificial intelligence (AI) and machine
+learning (ML) methods and owing to financial and domain-specific
+restrictions, researchers from wide variety of disciplines are now
+increasingly using predictions from pre-trained algorithms as outcome
+variables in statistical analyses. However, such practices have been
+shown to produce biased estimates and misleading inference [Wang et al.,
+2020](https://www.pnas.org/doi/suppl/10.1073/pnas.2001238117). The
+statistical challenges encountered in post-prediction inference (PPI)
+include (i) correct specification of the relationship between predicted
+outcomes and their true unobserved counterparts, (ii) robustness of the
+ML models to resampling or uncertainty about the training data, and
+(iii) appropriately propagating both bias and uncertainty from
+predictions into downstream inferential tasks.
 
-Drawing causal conclusions from observational data requires careful
-considerations of both the appropriate quantity to estimate and the
-rigor of statistical methods to achieve this end. The `svyate` package
-introduces a novel strategy for incorporating sampling mechanisms such
-as survey weights in a statistically valid analysis to make causal
-statements when an individual’s probability of selection depends on the
-treatment or characteristic of interest.
+Since the seminal work from [Wang et
+al.](https://www.pnas.org/doi/suppl/10.1073/pnas.2001238117), published
+in only 2020, multiple newer methods have been developed in quick
+succession as researchers are increasingly putting more focus on this
+new paradigm of statistical inference. Since each methods has their own
+set of advantages and restrictions, we develop the `rPPI` package to
+provide logistical software support to practitioners by allowing them to
+utilize all extant methods under the umbrella of a single `r`package.
+
+To make the utilization of the package convenient for users, we provide
+guidance on installation and use of the package and its functions in the
+following:
 
 ## Installation
 
