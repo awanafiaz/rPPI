@@ -61,7 +61,7 @@
 #'
 #' @param data description
 #'
-#' @param [need] [column name for lab versus unlab]
+#' @param set [column name for lab versus unlab]
 #'
 #' @param seed description
 #'
@@ -81,7 +81,7 @@
 #'
 #' @export
 
-ppi <- function(formula, family, method, data, need, seed = NULL, alpha = 0.05,
+ppi <- function(formula, family, method, data, set, seed = NULL, alpha = 0.05,
 
   alternative = "two-sided", ...) {
 
