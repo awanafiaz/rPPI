@@ -1,9 +1,11 @@
 #===============================================================================
 #
-#  PROGRAM: angelopoulos.R (PPI original)
+#  PROGRAM: predpi_ols.R
 #
 #  AUTHORS: Kentaro Hoffman (khoffm3@uw.edu)
 #           Stephen Salerno (ssalerno@fredhutch.org)
+#
+#           ^ UPDATE THESE
 #
 #  PURPOSE: Implementation of various algorithms from Angelopoulos et al. (2023)
 #
@@ -15,15 +17,13 @@
 #
 #           1. angelopoulos: Linear Regression                                   # SS: Better naming conventions?
 #
-#  Notes:   1. How do we want to handle the data argument? One argument with a
-#              stacked dataset and a column that gives the set (tr, te, val)?
-#              Or two dataset arguments, an unlabeled and labeled?
+#  NOTES:   1. NEED TO ADD REFERENCES
 #
-#  Updated: 2023-12-02
+#  Updated: 2023-12-27
 #
 #===============================================================================
 
-#=== LINEAR REGRESSION =========================================================
+#=== ORDINARY LEAST SQUARES ====================================================
 
 #' PPI Linear Regression using Angelopoulos et al. (2023) Analytic Form
 #'
@@ -33,7 +33,7 @@
 #' @details
 #' Additional details...
 #'
-#' @param rec_form A formula defining the rectifier model. This should be of
+#' @param rec_form A formula defining the rectifier model. This should be of     # Redo these to conform to new conventions
 #' the form Y - Yhat ~ X, where Y is the name of the column corresponding to
 #' the observed outcome in the labeled data, Yhat is the name of the column
 #' corresponding to the predicted outcome in the labeled data, and X generally
@@ -56,50 +56,33 @@
 #'
 #' dat <- simdat()
 #'
-#' angelopoulos_original(rec_form, inf_form, dat = dat)
-#'
-#' @export
+#' angelopoulos_original(rec_form, inf_form, dat = dat)         ## Update with wrapper function or keep method-specific examples?
 #'
 #' @import stats
 #'
+#' @export
 
-
-#-- ANGELOPOULOS
-
-# SS: taking out the defaults so this breaks with no input. Can force assertions later
-# SS: See note, should we have two data arguments to avoid slicing?
-
-angelopoulos_original <- function(rec_form, inf_form, dat) {
-
-  X <- model.matrix(rec_form, data = dat[dat$set == "tst",])
-
-  Y <- dat[dat$set == "tst", all.vars(rec_form)[1]]
-
-  f <- dat[dat$set == "tst", all.vars(rec_form)[2]]
-
-  X_tilde <- model.matrix(inf_form, data = dat[dat$set == "val",])
-
-  f_tilde <- dat[dat$set == "val", all.vars(inf_form)[1]]
+predpi_ols <- function(X_l, Y_l, f_l, X_u, f_u, n, p, N, ...) {
 
   #- 1. Prediction-Powered Estimator
 
-  theta_tilde_f <- solve(crossprod(X_tilde))%*% t(X_tilde) %*% f_tilde
+  theta_tilde_f <- solve(crossprod(X_u)) %*% t(X_u) %*% f_u
 
-  delta_hat_f <- solve(crossprod(X)) %*% t(X) %*% (f - Y)
+  delta_hat_f   <- solve(crossprod(X_l)) %*% t(X_l) %*% (f_l - Y_l)
 
-  theta_hat_pp <- theta_tilde_f - delta_hat_f
+  theta_hat_pp  <- theta_tilde_f - delta_hat_f
 
   #- 2. Meat and Bread for Imputed Estimate
 
-  Sigma_tilde <- crossprod(X_tilde) / nrow(X_tilde)
+  Sigma_tilde <- crossprod(X_u) / N
 
-  M_tilde <- sapply(1:nrow(X_tilde), function(i) {
+  M_tilde <- sapply(1:N, function(i) {
 
-    (c(f_tilde[i] - crossprod(X_tilde[i,], theta_tilde_f)))^2 *
+    (c(f_u[i] - crossprod(X_u[i,], theta_tilde_f)))^2 *
 
-      tcrossprod(X_tilde[i,])}) |>
+      tcrossprod(X_u[i,])}) |>
 
-    rowMeans() |> matrix(nrow = ncol(X_tilde))
+    rowMeans() |> matrix(nrow = p)
 
   iSigma_tilde <- solve(Sigma_tilde)
 
@@ -109,13 +92,15 @@ angelopoulos_original <- function(rec_form, inf_form, dat) {
 
   #- 4. Meat and Bread for Empirical Rectifier
 
-  Sigma <- crossprod(X) / nrow(X)
+  Sigma <- crossprod(X_l) / n
 
-  M <- sapply(1:nrow(X), function(i) {
+  M <- sapply(1:n, function(i) {
 
-    (c(f[i] - Y[i] - crossprod(X[i,], delta_hat_f)))^2 * tcrossprod(X[i,])}) |>
+    (c(f_l[i] - Y_l[i] - crossprod(X_l[i,], delta_hat_f)))^2 *
 
-    rowMeans() |> matrix(nrow = ncol(X))
+      tcrossprod(X_l[i,])}) |>
+
+    rowMeans() |> matrix(nrow = p)
 
   iSigma <- solve(Sigma)
 
@@ -123,9 +108,9 @@ angelopoulos_original <- function(rec_form, inf_form, dat) {
 
   V <- iSigma %*% M %*% iSigma
 
-  #- 6. Standard Error Estimate
+  #- 6. Standard Error Estimates
 
-  se <- sqrt((diag(V) / nrow(X)) + (diag(V_tilde) / nrow(X_tilde)))
+  se <- sqrt(diag(V) / n + diag(V_tilde) / N)
 
   #- Output
 

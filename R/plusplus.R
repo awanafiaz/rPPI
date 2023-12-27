@@ -11,7 +11,7 @@
 #
 #  INPUTS:  N/A
 #
-#  OUTPUS:  Prediction-powered inference functions for various target estimands: # SS: Wrapper function around these?
+#  OUTPUTS: Prediction-powered inference functions for various target estimands: # SS: Wrapper function around these?
 #
 #           1. ppi_ols_ci: Linear Regression                                     # SS: Better naming conventions?
 #
@@ -61,19 +61,36 @@ calc_lhat_glm <- function(grads, grads_hat, grads_hat_unlabeled, inv_hessian,
 
   coord = NULL, clip = F) {
 
-  n <- nrow(grads)
-  N <- nrow(grads_hat_unlabeled)
+  if(is.null(dim(grads))) grads <- matrix(grads, ncol = 1)
+
+  if(is.null(dim(grads_hat))) grads_hat <- matrix(grads_hat, ncol = 1)
+
+  if(is.null(dim(grads_hat_unlabeled))) grads_hat_unlabeled <- matrix(grads_hat_unlabeled, ncol = 1)
+
+  n <- ifelse(is.null(dim(grads)), length(grads), nrow(grads))
+  N <- ifelse(is.null(dim(grads_hat_unlabeled)), length(grads_hat_unlabeled), nrow(grads_hat_unlabeled))
   d <- ncol(inv_hessian)
 
   cov_grads <- matrix(0, nrow = d, ncol = d)
 
   for (i in 1:n) {
 
-    cov_grads <- cov_grads + (1 / n) * (
+    if (is.null(dim(grads))) {
 
-      outer(grads[i,] - colMeans(grads), grads_hat[i,] - colMeans(grads_hat)) +
+      cov_grads <- cov_grads + (1 / n) * (
 
-      outer(grads_hat[i,] - colMeans(grads_hat), grads[i, ] - colMeans(grads)))
+        outer(grads[i] - mean(grads), grads_hat[i] - mean(grads_hat)) +
+
+          outer(grads_hat[i] - mean(grads_hat), grads[i] - mean(grads)))
+
+    } else {
+
+      cov_grads <- cov_grads + (1 / n) * (
+
+        outer(grads[i,] - colMeans(grads), grads_hat[i,] - colMeans(grads_hat)) +
+
+          outer(grads_hat[i,] - colMeans(grads_hat), grads[i,] - colMeans(grads)))
+    }
   }
 
   var_grads_hat <- cov(rbind(grads_hat, grads_hat_unlabeled))

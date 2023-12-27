@@ -25,11 +25,11 @@
 #              first is the stacked data.
 #
 #           3. Propose having a "method" argument to signify which authors'
-#              method to use and a "family" argument (maybe better name?) to
+#              method to use and a "estimand" argument (maybe better name?) to
 #              signify what model (e.g., lm, glm, ...). Suggest we concatenate
 #              these two arguments to match to the appropriate helper function,
 #              all of which will have the same naming convention:
-#              method_family
+#              method_estimand
 #
 #           4. All other arguments that relate to all the methods (e.g., alpha),
 #              or all other method-specific arguments and will have defaults.
@@ -55,7 +55,7 @@
 #'
 #' @param formula description [of the form Y - f ~ X1 + X2 + ...]
 #'
-#' @param family description
+#' @param estimand description
 #'
 #' @param method description
 #'
@@ -81,9 +81,9 @@
 #'
 #' @export
 
-ppi <- function(formula, family, method, data, set, seed = NULL, alpha = 0.05,
+ppi <- function(formula, estimand, method, data, set, seed = NULL,
 
-  alternative = "two-sided", ...) {
+  alpha = 0.05, alternative = "two-sided", ...) {
 
   #--- CHECKS & ASSERTIONS -----------------------------------------------------
 
@@ -102,13 +102,13 @@ ppi <- function(formula, family, method, data, set, seed = NULL, alpha = 0.05,
       "See the 'Details' section of the documentation for more information."))
   }
 
-  if (!(family %in%
+  if (!(estimand %in%
 
-    c("mean", "gaussian", "binomial", "multinomial", "quantile"))) {
+    c("mean", "ols", "binomial", "multinomial", "quantile"))) {
 
-    stop(paste("'family' must be one of",
+    stop(paste("'estimand' must be one of",
 
-      "c('mean', 'gaussian', 'binomial', 'multinomial', 'quantile')",
+      "c('mean', 'ols', 'binomial', 'multinomial', 'quantile')",
 
       "See the 'Details' section of the documentation for more information."))
   }
@@ -125,7 +125,7 @@ ppi <- function(formula, family, method, data, set, seed = NULL, alpha = 0.05,
 
   Y_l <- data[data$set == "tst", all.vars(formula)[1]] |> matrix(ncol = 1)       # Fix column argument
 
-  f_l <- data[data$set == "tst", all.vars(formual)[2]] |> matrix(ncol = 1)       # Fix column argument
+  f_l <- data[data$set == "tst", all.vars(formula)[2]] |> matrix(ncol = 1)       # Fix column argument
 
   #-- UNLABELED DATA
 
@@ -143,9 +143,9 @@ ppi <- function(formula, family, method, data, set, seed = NULL, alpha = 0.05,
 
   #--- METHOD ------------------------------------------------------------------
 
-  func <- get(paste(method, family, sep = "_"))
+  func <- get(paste(method, estimand, sep = "_"))
 
-  fit <- func(X_l, Y_l, f_l, X_u, f_u, ...)
+  fit <- func(X_l, Y_l, f_l, X_u, f_u, n, p, N, ...)
 
   ci  <- zconfint_generic(fit$est, fit$se, alpha, alternative)
 
