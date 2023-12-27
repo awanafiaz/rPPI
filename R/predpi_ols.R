@@ -56,7 +56,7 @@
 #'
 #' dat <- simdat()
 #'
-#' angelopoulos_original(rec_form, inf_form, dat = dat)         ## Update with wrapper function or keep method-specific examples?
+#' ppi(form, "ols", "predpi", dat, "set")
 #'
 #' @import stats
 #'

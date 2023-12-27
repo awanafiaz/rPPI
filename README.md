@@ -133,12 +133,10 @@ rPPI::wang_boot(rel_form, inf_form, dat = dat, nboot)
 
 ``` r
 # Requires the specification of 
-## 1. rectifier model
-rec_form <- Y - Yhat ~ X1 
-## 2. inference model
-inf_form <- Yhat ~ X1
+## 1. formula
+form <- Y - Yhat ~ X1 
 
-rPPI::angelopoulos_original(rec_form, inf_form, dat)
+rPPI::ppi(form, "ols", "predpi", dat, "set")
 #> $est
 #> [1] 11.697627  0.817898
 #> 
