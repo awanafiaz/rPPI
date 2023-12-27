@@ -18,7 +18,7 @@ ppi(
 )
 }
 \arguments{
-\item{formula}{description \link{of the form Y - f ~ X1 + X2 + ...}}
+\item{formula}{description ... of the form Y - f ~ X1 + X2 + ...}
 
 \item{estimand}{description}
 
@@ -26,7 +26,7 @@ ppi(
 
 \item{data}{description}
 
-\item{set}{\link{column name for lab versus unlab}}
+\item{set}{... column name for lab versus unlab...}
 
 \item{seed}{description}
 

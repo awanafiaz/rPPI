@@ -4,39 +4,77 @@
 \alias{predpi_ols}
 \title{PPI Linear Regression using Angelopoulos et al. (2023) Analytic Form}
 \usage{
-predpi_ols(X_l, Y_l, f_l, X_u, f_u, n, p, N, ...)
+predpi_ols(
+  X_l,
+  Y_l,
+  f_l,
+  X_u,
+  f_u,
+  n,
+  p,
+  N,
+  lhat = NULL,
+  coord = NULL,
+  w = NULL,
+  w_unlabeled = NULL
+)
 }
 \arguments{
-\item{rec_form}{A formula defining the rectifier model. This should be of     # Redo these to conform to new conventions
-the form Y - Yhat ~ X, where Y is the name of the column corresponding to
-the observed outcome in the labeled data, Yhat is the name of the column
-corresponding to the predicted outcome in the labeled data, and X generally
-corresponds to the features of interest (e.g., X1 + X2).}
+\item{X_l}{(ndarray): Covariates corresponding to the gold-standard labels.}
 
-\item{inf_form}{A formula defining the inference model. This should be of
-the form Yhat ~ X, where Yhat is the name of the column corresponding to the
-predicted outcome in the unlabeled data, and X generally corresponds to the
-features of interest (e.g., X1 + X2).}
+\item{Y_l}{(ndarray): Gold-standard labels.}
 
-\item{dat}{data in the form of the simdat function output}
+\item{f_l}{(ndarray): Predictions corresponding to the gold-standard labels.}
+
+\item{X_u}{(ndarray): Covariates corresponding to the unlabeled data.}
+
+\item{f_u}{(ndarray): Predictions corresponding to the unlabeled data.}
+
+\item{n}{(int): Number of labeled data points.}
+
+\item{p}{(int): Dimension of the covariates.}
+
+\item{N}{(int): Number of unlabeled data points.}
+
+\item{lhat}{(float, optional): Power-tuning parameter (see \verb{[ADZ23] <https://arxiv.org/abs/2311.01453>}__). The default value \code{None} will estimate the optimal value from data. Setting \code{lhat=1} recovers PPI with no power tuning, and setting \code{lhat=0} recovers the classical point estimate.}
+
+\item{coord}{(int, optional): Coordinate for which to optimize \code{lhat}. If \code{None}, it optimizes the total variance over all coordinates. Must be in {1, ..., d} where d is the shape of the estimand.}
+
+\item{w}{(ndarray, optional): Sample weights for the labeled data set.}
+
+\item{w_unlabeled}{(ndarray, optional): Sample weights for the unlabeled data set.}
 }
 \value{
 A list of outputs: estimate of inference model parameters and corresponding standard errors
 }
 \description{
-A short description...
+Computes the prediction-powered point estimate of the OLS coefficients.
 }
 \details{
 Additional details...
 }
 \examples{
 
-rec_form <- Y - Yhat ~ X1
-
-inf_form <- Yhat ~ X1
-
 dat <- simdat()
 
-angelopoulos_original(rec_form, inf_form, dat = dat)         ## Update with wrapper function or keep method-specific examples?
+form <- Y - Yhat ~ X1
+
+X_l <- model.matrix(form, data = dat[dat$set == "tst",])
+
+Y_l <- dat[dat$set == "tst", all.vars(form)[1]] |> matrix(ncol = 1)
+
+f_l <- dat[dat$set == "tst", all.vars(form)[2]] |> matrix(ncol = 1)
+
+X_u <- model.matrix(form, data = dat[dat$set == "val",])
+
+f_u <- dat[dat$set == "val", all.vars(form)[2]] |> matrix(ncol = 1)
+
+n <- nrow(X_l)
+
+p <- ncol(X_l)
+
+N <- nrow(X_u)
+
+predpi_ols(X_l, Y_l, f_l, X_u, f_u, n, p, N)
 
 }

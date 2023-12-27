@@ -53,7 +53,7 @@
 #' @details
 #' Additional details...
 #'
-#' @param formula description [of the form Y - f ~ X1 + X2 + ...]
+#' @param formula description ... of the form Y - f ~ X1 + X2 + ...
 #'
 #' @param estimand description
 #'
@@ -61,7 +61,7 @@
 #'
 #' @param data description
 #'
-#' @param set [column name for lab versus unlab]
+#' @param set ... column name for lab versus unlab...
 #'
 #' @param seed description
 #'
