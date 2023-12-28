@@ -10,12 +10,12 @@
 #' Duchi, and T. Zrnic. PPI++: Efficient Prediction Powered Inference.
 #' arxiv:2311.01453, 2023.
 #'
-#' @param Y (ndarray): Gold-standard labels.
+#' @param Y_l (ndarray): Gold-standard labels.
 #'
-#' @param Yhat (ndarray): Predictions corresponding to the gold-standard
+#' @param f_l (ndarray): Predictions corresponding to the gold-standard
 #' labels.
 #'
-#' @param Yhat_unlabeled (ndarray): Predictions corresponding to the unlabeled
+#' @param f_u (ndarray): Predictions corresponding to the unlabeled
 #' data.
 #'
 #' @param lhat (float, optional): Power-tuning parameter (see
@@ -28,10 +28,10 @@
 #' `None`, it optimizes the total variance over all coordinates. Must be in
 #' {1, ..., d} where d is the dimension of the estimand.
 #'
-#' @param w (ndarray, optional): Sample weights for the labeled data set.
+#' @param w_l (ndarray, optional): Sample weights for the labeled data set.
 #' Defaults to all ones vector.
 #'
-#' @param w_unlabeled (ndarray, optional): Sample weights for the unlabeled
+#' @param w_u (ndarray, optional): Sample weights for the unlabeled
 #' data set. Defaults to all ones vector.
 #'
 #' @returns float or ndarray: Prediction-powered point estimate of the mean.
@@ -44,51 +44,39 @@
 #'
 #' @export
 
-ppi_mean_pointestimate <- function(Y, Yhat, Yhat_unlabeled,
+plusplus_mean_est <- function(Y_l, f_l, f_u, lhat = NULL, coord = NULL,
 
-  lhat = NULL, coord = NULL, w = NULL, w_unlabeled = NULL) {
+  w_l = NULL, w_u = NULL) {
 
-  n <- ifelse(is.null(dim(Y)), length(Y), nrow(Y))
-  N <- ifelse(is.null(dim(Yhat_unlabeled)), length(Yhat_unlabeled), nrow(Yhat_unlabeled))
-  d <- if (length(dim(Yhat)) > 1) dim(Yhat)[2] else 1
+  n <- ifelse(is.null(dim(Y_l)), length(Y_l), nrow(Y_l))
+  N <- ifelse(is.null(dim(f_u)), length(f_u), nrow(f_u))
+  p <- if (length(dim(f_l)) > 1) dim(f_l)[2] else 1
 
-  if (is.null(w)) {
+  if (is.null(w_l)) w_l <- rep(1, n) else w_l <- w_l / sum(w_l) * n
 
-    w <- rep(1, n)
-
-  } else {
-
-    w <- w / sum(w) * n
-  }
-
-  if (is.null(w_unlabeled)) {
-
-    w_unlabeled <- rep(1, N)
-
-  } else {
-
-    w_unlabeled <- w_unlabeled / sum(w_unlabeled) * N
-  }
+  if (is.null(w_u)) w_u <- rep(1, N) else w_u <- w_u / sum(w_u) * N
 
   if (is.null(lhat)) {
 
-    ppi_pointest <- mean(w_unlabeled * Yhat_unlabeled) + mean(w * (Y - Yhat))
+    est <- mean(w_u * f_u) + mean(w_l * (Y_l - f_l))
 
-    grads <- w * (Y - ppi_pointest)
+    grads <- w_l * (Y_l - est)
 
-    grads_hat <- w * (Yhat - ppi_pointest)
+    grads_hat <- w_l * (f_l - est)
 
-    grads_hat_unlabeled <- w_unlabeled * (Yhat_unlabeled - ppi_pointest)
+    grads_hat_unlabeled <- w_u * (f_u - est)
 
-    inv_hessian <- diag(d)
+    inv_hessian <- diag(p)
 
-    lhat <- calc_lhat_glm(grads, grads_hat, grads_hat_unlabeled, inv_hessian, coord, clip = T)
+    lhat <- calc_lhat_glm(
 
-    return(ppi_mean_pointestimate(Y, Yhat, Yhat_unlabeled, lhat = lhat, coord = coord, w = w, w_unlabeled = w_unlabeled))
+      grads, grads_hat, grads_hat_unlabeled, inv_hessian, coord, clip = T)
+
+    return(plusplus_mean_est(Y_l, f_l, f_u, lhat, coord, w_l, w_u))
 
   } else {
 
-    return(mean(w_unlabeled * lhat * Yhat_unlabeled, na.rm = T) + mean(w * (Y - lhat * Yhat), na.rm = T))
+    return(mean(w_u * lhat * f_u) + mean(w_l * (Y_l - lhat * f_l)))
   }
 }
 
@@ -102,12 +90,12 @@ ppi_mean_pointestimate <- function(Y, Yhat, Yhat_unlabeled,
 #' Duchi, and T. Zrnic. PPI++: Efficient Prediction Powered Inference.
 #' arxiv:2311.01453, 2023.
 #'
-#' @param Y (ndarray): Gold-standard labels.
+#' @param Y_l (ndarray): Gold-standard labels.
 #'
-#' @param Yhat (ndarray): Predictions corresponding to the gold-standard
+#' @param f_l (ndarray): Predictions corresponding to the gold-standard
 #' labels.
 #'
-#' @param Yhat_unlabeled (ndarray): Predictions corresponding to the unlabeled
+#' @param f_u (ndarray): Predictions corresponding to the unlabeled
 #' data.
 #'
 #' @param alpha (float, optional): Error level; the confidence interval will target a coverage of 1 - alpha. Must be in (0, 1).
@@ -124,10 +112,10 @@ ppi_mean_pointestimate <- function(Y, Yhat, Yhat_unlabeled,
 #' `None`, it optimizes the total variance over all coordinates. Must be in
 #' {1, ..., d} where d is the dimension of the estimand.
 #'
-#' @param w (ndarray, optional): Sample weights for the labeled data set.
+#' @param w_l (ndarray, optional): Sample weights for the labeled data set.
 #' Defaults to all ones vector.
 #'
-#' @param w_unlabeled (ndarray, optional): Sample weights for the unlabeled
+#' @param w_u (ndarray, optional): Sample weights for the unlabeled
 #' data set. Defaults to all ones vector.
 #'
 #' @returns tuple: Lower and upper bounds of the prediction-powered confidence
@@ -141,60 +129,48 @@ ppi_mean_pointestimate <- function(Y, Yhat, Yhat_unlabeled,
 #'
 #' @export
 
-ppi_mean_ci <- function(Y, Yhat, Yhat_unlabeled,
+plusplus_mean <- function(Y_l, f_l, f_u, alpha = 0.05, alternative = "two-sided",
 
-  alpha = 0.05, alternative = "two-sided", lhat = NULL, coord = NULL, w = NULL,
-
-  w_unlabeled = NULL) {
+  lhat = NULL, coord = NULL, w_l = NULL, w_u = NULL) {
 
   #- Compute Dimensions of Inputs
 
-  n <- ifelse(is.null(dim(Y)), length(Y), nrow(Y))
-  N <- ifelse(is.null(dim(Yhat_unlabeled)), length(Yhat_unlabeled), nrow(Yhat_unlabeled))
-  d <- if (length(dim(Yhat)) > 1) dim(Yhat)[2] else 1
+  n <- ifelse(is.null(dim(Y_l)), length(Y_l), nrow(Y_l))
+  N <- ifelse(is.null(dim(f_u)), length(f_u), nrow(f_u))
+  p <- if (length(dim(f_l)) > 1) dim(f_l)[2] else 1
 
-  if (is.null(w)) {
+  if (is.null(w_l)) w_l <- rep(1, n) else w_l <- w_l / sum(w_l) * n
 
-    w <- rep(1, n)
-
-  } else {
-
-    w <- w / sum(w) * n
-  }
-
-  if (is.null(w_unlabeled)) {
-
-    w_unlabeled <- rep(1, N)
-
-  } else {
-
-    w_unlabeled <- w_unlabeled / sum(w_unlabeled) * N
-  }
+  if (is.null(w_u)) w_u <- rep(1, N) else w_u <- w_u / sum(w_u) * N
 
   if (is.null(lhat)) {
 
-    ppi_pointest <- ppi_mean_pointestimate(Y, Yhat, Yhat_unlabeled, lhat = 1, w = w, w_unlabeled = w_unlabeled)
+    est <- plusplus_mean_est(Y_l, f_l, f_u, 1, w_l, w_u)
 
-    grads <- w * (Y - ppi_pointest)
+    grads <- w_l * (Y_l - est)
 
-    grads_hat <- w * (Yhat - ppi_pointest)
+    grads_hat <- w_l * (f_l - est)
 
-    grads_hat_unlabeled <- w_unlabeled * (Yhat_unlabeled - ppi_pointest)
+    grads_hat_unlabeled <- w_u * (f_u - est)
 
-    inv_hessian <- diag(d)
+    inv_hessian <- diag(p)
 
-    lhat <- calc_lhat_glm(grads, grads_hat, grads_hat_unlabeled, inv_hessian, coord = NULL, clip = T)
+    lhat <- calc_lhat_glm(
 
-    return(ppi_mean_ci(Y, Yhat, Yhat_unlabeled, lhat = lhat, coord = coord, w = w, w_unlabeled = w_unlabeled))
+      grads, grads_hat, grads_hat_unlabeled, inv_hessian, coord, clip = T)
+
+    return(plusplus_mean(Y_l, f_l, f_u, lhat, coord, w_l, w_u))
   }
 
-  ppi_pointest <- ppi_mean_pointestimate(Y, Yhat, Yhat_unlabeled, lhat = lhat, coord = coord, w = w, w_unlabeled = w_unlabeled)
+  est <- plusplus_mean_est(Y_l, f_l, f_u, lhat, coord, w_l, w_u)
 
-  imputed_std <- sd(w_unlabeled * (lhat * Yhat_unlabeled)) * sqrt((N - 1) / N) / sqrt(N)
+  imputed_std <- sd(w_u * (lhat * f_u)) * sqrt((N - 1) / N) / sqrt(N)
 
-  rectifier_std <- sd(w * (Y - lhat * Yhat)) * sqrt((n - 1) / n) / sqrt(n)
+  rectifier_std <- sd(w_l * (Y_l - lhat * f_l)) * sqrt((n - 1) / n) / sqrt(n)
 
-  return(zconfint_generic(ppi_pointest, sqrt(imputed_std^2 + rectifier_std^2), alpha, alternative))
+  return(zconfint_generic(
+
+    est, sqrt(imputed_std^2 + rectifier_std^2), alpha, alternative))
 }
 
 
