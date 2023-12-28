@@ -173,5 +173,4 @@ plusplus_mean <- function(Y_l, f_l, f_u, alpha = 0.05, alternative = "two-sided"
     est, sqrt(imputed_std^2 + rectifier_std^2), alpha, alternative))
 }
 
-
 #=== END =======================================================================
