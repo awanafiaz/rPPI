@@ -2,9 +2,6 @@
 # HELPER FUNCTIONS
 #===============================================================================
 
-
-
-
 #=== PPI++ =====================================================================
 
 #--- ORDINARY LEAST SQUARES ----------------------------------------------------
@@ -122,110 +119,125 @@ wls <- function(X, Y, w = NULL, return_se = F) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-################################################################################
-################################################################################
-
-
-
-
 #--- OLS GRADIENT AND HESSIAN --------------------------------------------------
 
-"""Computes the statistics needed for the OLS-based prediction-powered inference.
+#' OLS Gradient and Hessian
+#'
+#' @description
+#' Computes the statistics needed for the OLS-based
+#' prediction-powered inference.
+#'
+#' @param est (vector): Point estimates of the coefficients.
+#'
+#' @param X_l (matrix): Covariates for the labeled data set.
+#'
+#' @param Y_l (vector): Labels for the labeled data set.
+#'
+#' @param f_l (vector): Predictions for the labeled data set.
+#'
+#' @param X_u (matrix): Covariates for the unlabeled data set.
+#'
+#' @param f_u (vector): Predictions for the unlabeled data set.
+#'
+#' @param w_l (vector, optional): Sample weights for the labeled data set.
+#'
+#' @param w_u (vector, optional): Sample weights for the unlabeled data set.
+#'
+#' @param use_u (bool, optional): Whether to use the unlabeled data set.
+#'
+#' @returns (list): A list containing the following:
+#'
+#' \describe{
+#'    \item{grads}{(matrix): n x p matrix gradient of the loss function with
+#'    respect to the coefficients.}
+#'    \item{grads_hat}{(matrix): n x p matrix gradient of the loss function
+#'    with respect to the coefficients, evaluated using the labeled
+#'    predictions.}
+#'    \item{grads_hat_unlabeled}{(matrix): N x p matrix gradient of the loss
+#'    function with respect to the coefficients, evaluated using the unlabeled
+#'    predictions.}
+#'    \item{inv_hessian}{(matrix): p x p matrix inverse Hessian of the loss
+#'    function with respect to the coefficients.}
+#' }
+#'
+#' @examples
+#'
+#' dat <- simdat()
+#'
+#' form <- Y - Yhat ~ X1
+#'
+#' X_l <- model.matrix(form, data = dat[dat$set == "tst",])
+#'
+#' Y_l <- dat[dat$set == "tst", all.vars(form)[1]] |> matrix(ncol = 1)
+#'
+#' f_l <- dat[dat$set == "tst", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' X_u <- model.matrix(form, data = dat[dat$set == "val",])
+#'
+#' f_u <- dat[dat$set == "val", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' n <- nrow(X_l)
+#'
+#' p <- ncol(X_l)
+#'
+#' N <- nrow(X_u)
+#'
+#' est <- plusplus_ols_est(X_l, Y_l, f_l, X_u, f_u, n, p, N)
+#'
+#' w_l <- rep(1, n)
+#'
+#' w_u <- rep(1, N)
+#'
+#' stats <- ols_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u, use_u = T)
+#'
+#' @export
 
-    Args:
-        pointest (ndarray): A point estimate of the coefficients.
-        X (ndarray): Covariates for the labeled data set.
-        Y (ndarray): Labels for the labeled data set.
-        Yhat (ndarray): Predictions for the labeled data set.
-        X_unlabeled (ndarray): Covariates for the unlabeled data set.
-        Yhat_unlabeled (ndarray): Predictions for the unlabeled data set.
-        w (ndarray, optional): Sample weights for the labeled data set.
-        w_unlabeled (ndarray, optional): Sample weights for the unlabeled data set.
-        use_unlabeled (bool, optional): Whether to use the unlabeled data set.
+ols_get_stats <- function(est, X_l, Y_l, f_l, X_u, f_u,
 
-    Returns:
-        grads (ndarray): Gradient of the loss function with respect to the coefficients.
-        grads_hat (ndarray): Gradient of the loss function with respect to the coefficients, evaluated using the labeled predictions.
-        grads_hat_unlabeled (ndarray): Gradient of the loss function with respect to the coefficients, evaluated using the unlabeled predictions.
-        inv_hessian (ndarray): Inverse Hessian of the loss function with respect to the coefficients.
-    """
+  w_l = NULL, w_u = NULL, use_u = T) {
 
-ols_get_stats <- function(pointest, X, Y, Yhat, X_unlabeled, Yhat_unlabeled,
+  n <- nrow(X_l)
+  p <- ncol(X_l)
+  N <- nrow(X_u)
 
-  w = NULL, w_unlabeled = NULL, use_unlabeled = T) {
+  if (is.null(w_l)) w_l <- rep(1, n) else w_l <- w_l / sum(w_l) * n
 
-  n <- nrow(X)
-  N <- nrow(X_unlabeled)
-  d <- ncol(X)
+  if (is.null(w_u)) w_u <- rep(1, N) else w_u <- w_u / sum(w_u) * N
 
-  if (is.null(w)) {
+  hessian <- matrix(0, nrow = p, ncol = p)
 
-    w <- rep(1, n)
+  grads_hat_unlabeled <- matrix(0, nrow = N, ncol = p)
 
-  } else {
-
-    w <- w / sum(w) * n
-  }
-
-  if (is.null(w_unlabeled)) {
-
-    w_unlabeled <- rep(1, N)
-
-  } else {
-
-    w_unlabeled <- w_unlabeled / sum(w_unlabeled) * N
-  }
-
-  hessian <- matrix(0, nrow = d, ncol = d)
-
-  grads_hat_unlabeled <- matrix(0, nrow = N, ncol = ncol(X_unlabeled))
-
-  if (use_unlabeled) {
+  if (use_u) {
 
     for (i in 1:N) {
 
-      hessian <- hessian + w_unlabeled[i] / (N + n) *
+      hessian <- hessian + w_u[i] / (N + n) * tcrossprod(X_u[i, ])
 
-        tcrossprod(X_unlabeled[i, ])
+      grads_hat_unlabeled[i, ] <- w_u[i] * X_u[i, ] *
 
-      grads_hat_unlabeled[i, ] <- w_unlabeled[i] * X_unlabeled[i, ] *
-
-        (sum(X_unlabeled[i, ] * pointest) - Yhat_unlabeled[i])
+        (sum(X_u[i, ] * est) - f_u[i])
     }
   }
 
-  grads <- matrix(0, nrow = n, ncol = ncol(X))
+  grads <- matrix(0, nrow = n, ncol = p)
 
-  grads_hat <- matrix(0, nrow = n, ncol = ncol(X))
+  grads_hat <- matrix(0, nrow = n, ncol = p)
 
   for (i in 1:n) {
 
-    if (use_unlabeled) {
+    if (use_u) {
 
-      hessian <- hessian + w[i] / (N + n) * tcrossprod(X[i, ])
+      hessian <- hessian + w_l[i] / (N + n) * tcrossprod(X_l[i, ])
 
     } else {
 
-      hessian <- hessian + w[i] / n * tcrossprod(X[i, ])
+      hessian <- hessian + w_l[i] / n * tcrossprod(X_l[i, ])
     }
 
-    grads[i, ] <- w[i] * X[i, ] * (sum(X[i, ] * pointest) - Y[i])
+    grads[i, ] <- w_l[i] * X_l[i, ] * (sum(X_l[i, ] * est) - Y_l[i])
 
-    grads_hat[i, ] <- w[i] * X[i, ] * (sum(X[i, ] * pointest) - Yhat[i])
+    grads_hat[i, ] <- w_l[i] * X_l[i, ] * (sum(X_l[i, ] * est) - f_l[i])
   }
 
   inv_hessian <- solve(hessian)
@@ -235,23 +247,178 @@ ols_get_stats <- function(pointest, X, Y, Yhat, X_unlabeled, Yhat_unlabeled,
     grads_hat_unlabeled = grads_hat_unlabeled, inv_hessian = inv_hessian))
 }
 
+#--- ESTIMATE POWER TUNING PARAMETER -------------------------------------------
 
-#=== END =======================================================================
+#' Estimate PPI++ Power Tuning Parameter
+#'
+#' @description
+#' Calculates the optimal value of lhat for the prediction-powered confidence
+#' interval for GLMs.
+#'
+#' @param grads (matrix): n x p matrix gradient of the loss function with
+#' respect to the parameter evaluated at the labeled data.
+#'
+#' @param grads_hat (matrix): n x p matrix gradient of the loss function with
+#' respect to the model parameter evaluated using predictions on the labeled
+#' data.
+#'
+#' @param grads_hat_unlabeled (matrix): N x p matrix gradient of the loss
+#' function with respect to the parameter evaluated using predictions on the
+#' unlabeled data.
+#'
+#' @param inv_hessian (matrix): p x p matrix inverse of the Hessian of the
+#' loss function with respect to the parameter.
+#'
+#' @param coord (int, optional): Coordinate for which to optimize `lhat`.
+#' If `None`, it optimizes the total variance over all coordinates.
+#' Must be in {1, ..., d} where d is the shape of the estimand.
+#'
+#' @param clip (bool, optional): Whether to clip the value of lhat to be
+#' non-negative. Defaults to `False`.
+#'
+#' @examples
+#'
+#' dat <- simdat()
+#'
+#' form <- Y - Yhat ~ X1
+#'
+#' X_l <- model.matrix(form, data = dat[dat$set == "tst",])
+#'
+#' Y_l <- dat[dat$set == "tst", all.vars(form)[1]] |> matrix(ncol = 1)
+#'
+#' f_l <- dat[dat$set == "tst", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' X_u <- model.matrix(form, data = dat[dat$set == "val",])
+#'
+#' f_u <- dat[dat$set == "val", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' n <- nrow(X_l)
+#'
+#' p <- ncol(X_l)
+#'
+#' N <- nrow(X_u)
+#'
+#' est <- plusplus_ols_est(X_l, Y_l, f_l, X_u, f_u, n, p, N)
+#'
+#' w_l <- rep(1, n)
+#'
+#' w_u <- rep(1, N)
+#'
+#' stats <- ols_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u, use_u = T)
+#'
+#' calc_lhat_glm(stats$grads, stats$grads_hat, stats$grads_hat_unlabeled,
+#'               stats$inv_hessian, coord = NULL, clip = F)
+#'
+#' @returns (float): Optimal value of `lhat`. Lies in [0,1].
+#'
+#' @export
 
+calc_lhat_glm <- function(grads, grads_hat, grads_hat_unlabeled, inv_hessian,
 
+  coord = NULL, clip = F) {
 
+  if (is.null(dim(grads))) {
 
+    grads <- matrix(grads, ncol = 1)
+  }
 
+  if (is.null(dim(grads_hat))) {
 
+    grads_hat <- matrix(grads_hat, ncol = 1)
+  }
 
+  if (is.null(dim(grads_hat_unlabeled))) {
 
+    grads_hat_unlabeled <- matrix(grads_hat_unlabeled, ncol = 1)
+  }
 
+  n <- nrow(grads)
+  N <- nrow(grads_hat_unlabeled)
+  p <- ncol(inv_hessian)
 
+  cov_grads <- matrix(0, nrow = p, ncol = p)
 
-################################################################################
-################################################################################
+  for (i in 1:n) {
+
+    cov_grads <- cov_grads + (1/n) * (outer(grads[i,] - colMeans(grads),
+
+      grads_hat[i,] - colMeans(grads_hat)) +
+
+        outer(grads_hat[i,] - colMeans(grads_hat),
+
+          grads[i,] - colMeans(grads)))
+  }
+
+  var_grads_hat <- cov(rbind(grads_hat, grads_hat_unlabeled))
+
+  if (is.null(coord)) {
+
+    vhat <- inv_hessian
+
+  } else {
+
+    vhat <- inv_hessian %*% diag(p)[, coord]
+  }
+
+  if (p > 1) {
+
+    num <- ifelse(is.null(coord),
+
+      sum(diag(vhat %*% cov_grads %*% vhat)), vhat %*% cov_grads %*% vhat)
+
+    denom <- ifelse(is.null(coord),
+
+      2*(1 + n/N) * sum(diag(vhat %*% var_grads_hat %*% vhat)),
+
+      2*(1 + n/N) * vhat %*% var_grads_hat %*% vhat)
+
+  } else {
+
+    num <- vhat * cov_grads * vhat
+
+    denom <- 2*(1 + n/N) * vhat * var_grads_hat * vhat
+  }
+
+  lhat <- num / denom
+
+  if (clip) {
+
+    lhat <- pmax(0, pmin(lhat, 1))
+  }
+
+  return(as.numeric(lhat))
+}
 
 #--- NORMAL CONFIDENCE INTERVALS -----------------------------------------------
+
+#' Normal Confidence Intervals
+#'
+#' @description
+#' Calculates normal confidence intervals for a given alternative at a given
+#' significance level.
+#'
+#' @param mean (float): Estimated normal mean.
+#'
+#' @param std_mean (float): Estimated standard error of the mean.
+#'
+#' @param alpha (float): Significance level in [0, 1]
+#'
+#' @param alternative (string): Alternative hypothesis, either 'two-sided',
+#' 'larger' or 'smaller'.
+#'
+#' @returns (vector): Lower and upper (1 - alpha) * 100% confidence limits.
+#'
+#' @examples
+#'
+#' n <- 1000
+#'
+#' Y <- rnorm(n, 1, 1)
+#'
+#' se_Y <-  sd(Y) / sqrt(n)
+#'
+#' zconfint_generic(Y, se_Y, alpha = 0.05, alternative = "two-sided")
+#'
+#' @export
 
 zconfint_generic <- function(mean, std_mean, alpha, alternative) {
 
@@ -281,75 +448,4 @@ zconfint_generic <- function(mean, std_mean, alpha, alternative) {
   return(c(lower, upper))
 }
 
-#--- ESTIMATE POWER TUNING PARAMETER -------------------------------------------
-
-calc_lhat_glm <- function(grads, grads_hat, grads_hat_unlabeled, inv_hessian,
-
-  coord = NULL, clip = F) {
-
-  if(is.null(dim(grads))) grads <- matrix(grads, ncol = 1)
-
-  if(is.null(dim(grads_hat))) grads_hat <- matrix(grads_hat, ncol = 1)
-
-  if(is.null(dim(grads_hat_unlabeled))) grads_hat_unlabeled <- matrix(grads_hat_unlabeled, ncol = 1)
-
-  n <- nrow(grads)
-  N <- nrow(grads_hat_unlabeled)
-  d <- ncol(inv_hessian)
-
-  cov_grads <- matrix(0, nrow = d, ncol = d)
-
-  for (i in 1:n) {
-
-      cov_grads <- cov_grads + (1 / n) * (
-
-        outer(grads[i,] - colMeans(grads), grads_hat[i,] - colMeans(grads_hat)) +
-
-          outer(grads_hat[i,] - colMeans(grads_hat), grads[i,] - colMeans(grads)))
-
-  }
-
-  var_grads_hat <- cov(rbind(grads_hat, grads_hat_unlabeled))
-
-  if (is.null(coord)) {
-
-    vhat <- inv_hessian
-
-  } else {
-
-    vhat <- inv_hessian %*% diag(d)[, coord]
-  }
-
-  if (d > 1) {
-
-    num <- ifelse(is.null(coord),
-
-                  sum(diag(vhat %*% cov_grads %*% vhat)), vhat %*% cov_grads %*% vhat)
-
-    denom <- ifelse(is.null(coord),
-
-                    2*(1 + n/N) * sum(diag(vhat %*% var_grads_hat %*% vhat)),
-
-                    2*(1 + n/N) * vhat %*% var_grads_hat %*% vhat)
-
-  } else {
-
-    num <- vhat * cov_grads * vhat
-
-    denom <- 2*(1 + n/N) * vhat * var_grads_hat * vhat
-  }
-
-  lhat <- num / denom
-
-  if (clip) {
-
-    lhat <- pmax(0, pmin(lhat, 1))
-  }
-
-  return(as.numeric(lhat))
-}
-
-
-
-
-
+#=== END =======================================================================
