@@ -102,7 +102,7 @@ plusplus_ols_est <- function(X_l, Y_l, f_l, X_u, f_u, n, p, N,
 
     return(plusplus_ols_est(X_l, Y_l, f_l, X_u, f_u,
 
-      lhat = lhat, coord = coord, w = w_l, w_u = w_u))
+      lhat = lhat, coord = coord, w_l = w_l, w_u = w_u))
 
   } else {
 
@@ -139,6 +139,11 @@ plusplus_ols_est <- function(X_l, Y_l, f_l, X_u, f_u, n, p, N,
 #' @param p (int): Number of covariates (features) of interest.
 #'
 #' @param N (int): Number of unlabeled observations.
+#'
+#' @param alpha (float): Significance level in \[0,1\]
+#'
+#' @param alternative (string): Alternative hypothesis, either 'two-sided',
+#' 'larger' or 'smaller'.
 #'
 #' @param lhat (float, optional): Power-tuning parameter.
 #' The default value `NULL` will estimate the optimal value from data.
@@ -205,7 +210,9 @@ plusplus_ols <- function(X_l, Y_l, f_l, X_u, f_u, n, p, N,
 
   use_u <- is.null(lhat) || lhat != 0
 
-  est <- plusplus_ols_est(X_l, Y_l, f_l, X_u, f_u, lhat, coord, w_l, w_u)
+  est <- plusplus_ols_est(
+
+    X_l, Y_l, f_l, X_u, f_u, n, p, N, lhat, coord, w_l, w_u)
 
   stats <- ols_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u, use_u)
 

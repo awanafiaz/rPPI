@@ -35,7 +35,7 @@
 #'
 #' Y <- X + rnorm(n, 0, 1)
 #'
-#' ols(X, Y, return_se = T)
+#' ols(X, Y, return_se = TRUE)
 #'
 #' @export
 
@@ -92,7 +92,7 @@ ols <- function(X, Y, return_se = F) {
 #'
 #' Y <- X + rnorm(n, 0, 1)
 #'
-#' wls(X, Y, w = w, return_se = T)
+#' wls(X, Y, w = w, return_se = TRUE)
 #'
 #' @export
 
@@ -188,13 +188,13 @@ wls <- function(X, Y, w = NULL, return_se = F) {
 #'
 #' w_u <- rep(1, N)
 #'
-#' stats <- ols_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u, use_u = T)
+#' stats <- ols_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u, use_u = TRUE)
 #'
 #' @export
 
 ols_get_stats <- function(est, X_l, Y_l, f_l, X_u, f_u,
 
-  w_l = NULL, w_u = NULL, use_u = T) {
+  w_l = NULL, w_u = NULL, use_u = TRUE) {
 
   n <- nrow(X_l)
   p <- ncol(X_l)
@@ -304,18 +304,18 @@ ols_get_stats <- function(est, X_l, Y_l, f_l, X_u, f_u,
 #'
 #' w_u <- rep(1, N)
 #'
-#' stats <- ols_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u, use_u = T)
+#' stats <- ols_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u, use_u = TRUE)
 #'
 #' calc_lhat_glm(stats$grads, stats$grads_hat, stats$grads_hat_unlabeled,
-#'               stats$inv_hessian, coord = NULL, clip = F)
+#'               stats$inv_hessian, coord = NULL, clip = FALSE)
 #'
-#' @returns (float): Optimal value of `lhat`. Lies in [0,1].
+#' @returns (float): Optimal value of `lhat` in \[0,1\].
 #'
 #' @export
 
 calc_lhat_glm <- function(grads, grads_hat, grads_hat_unlabeled, inv_hessian,
 
-  coord = NULL, clip = F) {
+  coord = NULL, clip = FALSE) {
 
   if (is.null(dim(grads))) {
 
@@ -401,7 +401,7 @@ calc_lhat_glm <- function(grads, grads_hat, grads_hat_unlabeled, inv_hessian,
 #'
 #' @param std_mean (float): Estimated standard error of the mean.
 #'
-#' @param alpha (float): Significance level in [0, 1]
+#' @param alpha (float): Significance level in \[0,1\]
 #'
 #' @param alternative (string): Alternative hypothesis, either 'two-sided',
 #' 'larger' or 'smaller'.
