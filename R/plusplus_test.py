@@ -30,6 +30,22 @@ def load_dataset(file_path):
         print(f"Error: File not found at {file_path}")
         return None
       
+@njit
+def safe_expit(x):
+    """Computes the sigmoid function in a numerically stable way."""
+    return np.exp(-np.logaddexp(0, -x))
+
+
+def safe_log1pexp(x):
+    """
+    Compute log(1 + exp(x)) in a numerically stable way.
+    """
+    idxs = x > 10
+    out = np.empty_like(x)
+    out[idxs] = x[idxs]
+    out[~idxs] = np.log1p(np.exp(x[~idxs]))
+    return out
+      
 def rectified_p_value(
     rectifier,
     rectifier_std,
@@ -789,8 +805,8 @@ def ppi_logistic_pointestimate(
     # Initialize theta
     theta = (
         LogisticRegression(
-            penalty=None,
-            solver="lbfgs",
+            penalty="none",
+            solver="newton-cg",                                                  # changed to check r code
             max_iter=10000,
             tol=1e-15,
             fit_intercept=False,
@@ -965,7 +981,7 @@ def ppi_logistic_ci(
     Yhat,
     X_unlabeled,
     Yhat_unlabeled,
-    alpha=0.1,
+    alpha=0.05,
     alternative="two-sided",
     lhat=None,
     coord=None,
@@ -1217,16 +1233,18 @@ def main():
       
       labeled_data = dataset[dataset["set"] == "tst"]
     
+      X              = np.concatenate((np.ones((labeled_data.shape[0], 1)), labeled_data["Xc"].values.reshape(-1, 1)), axis=1)  
       Y              = labeled_data["Y"].values
       Yhat           = labeled_data["Yhat"].values
     
       unlabeled_data = dataset[dataset["set"] == "val"]
     
+      X_unlabeled    = np.concatenate((np.ones((unlabeled_data.shape[0], 1)), unlabeled_data["Xc"].values.reshape(-1, 1)), axis=1)   
       Yhat_unlabeled = unlabeled_data["Yhat"].values
       
-      print(ppi_mean_pointestimate(Y, Yhat, Yhat_unlabeled))
+      print(ppi_logistic_pointestimate(X, Y, Yhat, X_unlabeled, Yhat_unlabeled, optimizer_options = {"ftol": 1e-15}))
       
-      print(ppi_mean_ci(Y, Yhat, Yhat_unlabeled))
+      print(ppi_logistic_ci(X, Y, Yhat, X_unlabeled, Yhat_unlabeled, optimizer_options = {"ftol": 1e-15}))
 
 if __name__ == "__main__":
     main()

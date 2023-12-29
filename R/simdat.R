@@ -15,7 +15,6 @@
 #' simdat(c(100, 100, 100), 1)
 #'
 
-
 simdat <- function(n = c(300, 300, 300), beta1 = 1) {
 
   X1 <- rnorm(sum(n), 1)
@@ -34,6 +33,41 @@ simdat <- function(n = c(300, 300, 300), beta1 = 1) {
   dat[set == "tst", "Yhat"] <- predict(fit_gam, newdat = dat[set == "tst",])
 
   dat[set == "val", "Yhat"] <- predict(fit_gam, newdat = dat[set == "val",])
+
+  return(dat)
+}
+
+#=== END =======================================================================
+
+simdat_logistic <- function(n = c(300, 300, 300), betac = 1) {
+
+  X1 <- rnorm(sum(n), 1)
+  X2 <- rnorm(sum(n), 2)
+  Xc <- sample(0:2, sum(n), replace = T)
+
+  p_Y <- plogis(c(betac*as.numeric(Xc == 2) + 1*as.numeric(Xc == 1) +
+
+    1*smooth(X1) - 2*smooth(X2) + rnorm(sum(n))))
+
+  Y <- factor(rbinom(sum(n), 1, p_Y))
+
+  set <- rep(c("trn", "tst", "val"), n)
+
+  dat <- data.frame(X1, X2, Xc, Y, Yhat = NA, set)
+
+  knn_tune <- caret::train(Y ~ X1 + X2 + Xc, data = dat[set == "trn",],
+
+    method = "knn", trControl = trainControl(method = "cv"),
+
+    tuneGrid = data.frame(k = c(1:10)))
+
+  fit_knn <- knn3(Y ~ X1 + X2 + Xc, data = dat[set == "trn",],
+
+    k = knn_tune$bestTune$k)
+
+  dat[set == "tst", "Yhat"] <- predict(fit_knn, dat[set == "tst",], type = "class")
+
+  dat[set == "val", "Yhat"] <- predict(fit_knn, dat[set == "val",], type = "class")
 
   return(dat)
 }
