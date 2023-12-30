@@ -448,4 +448,20 @@ zconfint_generic <- function(mean, std_mean, alpha, alternative) {
   return(c(lower, upper))
 }
 
+
+### NEED TO DOCUMENT ###########################################################
+
+log1pexp <- function(x) {
+
+  idxs <- x > 10
+
+  out <- numeric(length(x))
+
+  out[idxs] <- x[idxs]
+
+  out[!idxs] <- log1p(exp(x[!idxs]))
+
+  return(out)
+}
+
 #=== END =======================================================================

@@ -2,62 +2,99 @@
 # PPI++ LOGISTIC REGRESSION
 #===============================================================================
 
-log1pexp <- function(x) {
-
-  idxs <- x > 10
-
-  out <- numeric(length(x))
-
-  out[idxs] <- x[idxs]
-
-  out[!idxs] <- log1p(exp(x[!idxs]))
-
-  return(out)
-}
-
 #=== PPI++ LOGISTIC REGRESSION POINT ESTIMATE ==================================
 
-# """Computes the prediction-powered point estimate of the logistic regression coefficients.
-#
-# Args:
-#   X (ndarray): Covariates corresponding to the gold-standard labels.
-# Y (ndarray): Gold-standard labels.
-# Yhat (ndarray): Predictions corresponding to the gold-standard labels.
-# X_unlabeled (ndarray): Covariates corresponding to the unlabeled data.
-# Yhat_unlabeled (ndarray): Predictions corresponding to the unlabeled data.
-# lhat (float, optional): Power-tuning parameter (see `[ADZ23] <https://arxiv.org/abs/2311.01453>`__). The default value `None` will estimate the optimal value from data. Setting `lhat=1` recovers PPI with no power tuning, and setting `lhat=0` recovers the classical point estimate.
-# coord (int, optional): Coordinate for which to optimize `lhat`. If `None`, it optimizes the total variance over all coordinates. Must be in {1, ..., d} where d is the shape of the estimand.
-# optimizer_options (dict, optional): Options to pass to the optimizer. See scipy.optimize.minimize for details.
-# w (ndarray, optional): Sample weights for the labeled data set.
-# w_unlabeled (ndarray, optional): Sample weights for the unlabeled data set.
-#
-# Returns:
-#   ndarray: Prediction-powered point estimate of the logistic regression coefficients.
-#
-# Notes:
-#   `[ADZ23] <https://arxiv.org/abs/2311.01453>`__ A. N. Angelopoulos, J. C. Duchi, and T. Zrnic. PPI++: Efficient Prediction Powered Inference. arxiv:2311.01453, 2023.
-# """
+#' PPI++ Logistic Regression Point Estimate
+#'
+#' @description
+#' Computes the prediction-powered point estimate of the logistic regression
+#' coefficients.
+#'
+#' @param X_l (matrix): n x p matrix of covariates in the labeled data.
+#'
+#' @param Y_l (vector): n-vector of labeled outcomes.
+#'
+#' @param f_l (vector): n-vector of predictions in the labeled data.
+#'
+#' @param X_u (matrix): N x p matrix of covariates in the unlabeled data.
+#'
+#' @param f_u (vector): N-vector of predictions in the unlabeled data.
+#'
+#' @param n (int): Number of labeled observations.
+#'
+#' @param p (int): Number of covariates (features) of interest.
+#'
+#' @param N (int): Number of unlabeled observations.
+#'
+#' @param lhat (float, optional): Power-tuning parameter.
+#' The default value `NULL` will estimate the optimal value from data.
+#' Setting `lhat = 1` recovers PPI with no power tuning.
+#' Setting `lhat = 0` recovers the classical point estimate.
+#'
+#' @param coord (int, optional): Coordinate for which to optimize `lhat`.
+#' If `None`, it optimizes the total variance over all coordinates.
+#' Must be in {1, ..., p} where p is the shape of the estimand.
+#'
+#' @param opts (list, optional): Options to pass to the optimizer.
+#' See ?optim for details.
+#'
+#' @param w_l (vector, optional): n-vector of sample weights for the
+#' labeled data.
+#'
+#' @param w_u (vector, optional): N-vector of sample weights for the
+#' unlabeled data.
+#'
+#' @returns (vector): p-vector of prediction-powered point estimates of the
+#' logistic regression coefficients.
+#'
+#' @examples
+#'
+#' dat <- simdat_logistic()
+#'
+#' form <- Y - Yhat ~ Xc
+#'
+#' X_l <- model.matrix(form, data = dat[dat$set == "tst",])
+#'
+#' Y_l <- dat[dat$set == "tst", all.vars(form)[1]] |> matrix(ncol = 1)
+#'
+#' f_l <- dat[dat$set == "tst", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' X_u <- model.matrix(form, data = dat[dat$set == "val",])
+#'
+#' f_u <- dat[dat$set == "val", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' n <- nrow(X_l)
+#'
+#' p <- ncol(X_l)
+#'
+#' N <- nrow(X_u)
+#'
+#' plusplus_logistic_est(X_l, Y_l, f_l, X_u, f_u, n, p, N)
+#'
+#' @import stats
+#'
+#' @export
 
-ppi_logistic_pointestimate <- function(X, Y, Yhat, X_unlabeled, Yhat_unlabeled,
+plusplus_logistic_est <- function(X_l, Y_l, f_l, X_u, f_u, n, p, N,
 
-  lhat = NULL, coord = NULL, optimizer_options = NULL,
+  lhat = NULL, coord = NULL, opts = NULL, w_l = NULL, w_u = NULL) {
 
-  w = NULL, w_unlabeled = NULL) {
+  n <- nrow(Y_l)
+  p <- ncol(X_l)
+  N <- nrow(f_u)
 
-  n <- nrow(Y)
-  d <- ncol(X)
-  N <- nrow(Yhat_unlabeled)
+  if (is.null(w_l)) w_l <- rep(1, n) else w_l <- w_l / sum(w_l) * n
 
-  if (is.null(w)) w <- rep(1, n) else w <- w / sum(w) * n
+  if (is.null(w_u)) w_u <- rep(1, N) else w_u <- w_u / sum(w_u) * N
 
-  if (is.null(w_unlabeled)) w_unlabeled <- rep(1, N) else w_unlabeled <- w_unlabeled / sum(w_unlabeled) * N
+  if (is.null(opts) || !("factr" %in% names(opts))) {
 
-  if (is.null(optimizer_options) || !("ftol" %in% names(optimizer_options))) {
-
-    optimizer_options <- list(ftol = 1e-15)
+    opts <- list(factr = 1e-15)
   }
 
-  theta <- coef(glm(Y ~ . - 1, data = data.frame(Y, X), family = binomial))
+  theta <- coef(glm(Y_l ~ . - 1, data = data.frame(Y_l, X_l),
+
+    family = binomial))
 
   theta <- matrix(theta, ncol = 1)
 
@@ -65,127 +102,177 @@ ppi_logistic_pointestimate <- function(X, Y, Yhat, X_unlabeled, Yhat_unlabeled,
 
   rectified_logistic_loss <- function(theta) {
 
-    sum(w_unlabeled * (-Yhat_unlabeled * (X_unlabeled %*% theta) +
+    sum(w_u * (-f_u * (X_u %*% theta) + log1pexp(X_u %*% theta))) *
 
-      log1pexp(X_unlabeled %*% theta))) * lhat_curr / N -
+      lhat_curr / N - sum(w_l * (-f_l * (X_l %*% theta) + log1pexp(X_l %*% theta))) *
 
-      sum(w * (-Yhat * (X %*% theta) + log1pexp(X %*% theta))) * lhat_curr / n +
-
-      sum(w * (-Y * (X %*% theta) + log1pexp(X %*% theta))) / n
+      lhat_curr / n + sum(w_l * (-Y_l * (X_l %*% theta) + log1pexp(X_l %*% theta))) / n
   }
 
   rectified_logistic_grad <- function(theta) {
 
-    X_unlabeled_t <- t(X_unlabeled)
+    lhat_curr / N * t(X_u) %*% (w_u * (plogis(X_u %*% theta) - f_u)) -
 
-    X_t <- t(X)
+    lhat_curr / n * t(X_l) %*% (w_l * (plogis(X_l %*% theta) - f_l)) +
 
-    lhat_curr / N * X_unlabeled_t %*% (w_unlabeled *
-
-      (plogis(X_unlabeled %*% theta) - Yhat_unlabeled)) -
-
-      lhat_curr / n * X_t %*% (w * (plogis(X %*% theta) - Yhat)) +
-
-      1 / n * X_t %*% (w * (plogis(X %*% theta) - Y))
+      1 / n * t(X_l) %*% (w_l * (plogis(X_l %*% theta) - Y_l))
   }
 
-  ppi_pointest <- optim(par = theta, fn = rectified_logistic_loss,
+  est <- optim(par = theta, fn = rectified_logistic_loss,
 
     gr = rectified_logistic_grad, method = "L-BFGS-B",
 
-    control = list(ftol = optimizer_options$ftol))$par
+    control = list(factr = opts$factr))$par
 
   if (is.null(lhat)) {
 
-    stats <- logistic_get_stats(ppi_pointest, X, Y, Yhat, X_unlabeled,
+    stats <- logistic_get_stats(est, X_l, Y_l, f_l, X_u,
 
-      Yhat_unlabeled, w, w_unlabeled)
+      f_u, w_l, w_u)
 
     lhat <- calc_lhat_glm(stats$grads, stats$grads_hat,
 
       stats$grads_hat_unlabeled, stats$inv_hessian, clip = TRUE)
 
-    return(ppi_logistic_pointestimate(X, Y, Yhat, X_unlabeled, Yhat_unlabeled,
+    return(plusplus_logistic_est(X_l, Y_l, f_l, X_u, f_u, n, p, N,
 
-      optimizer_options = optimizer_options, lhat = lhat, coord = coord, w = w,
+      opts = opts, lhat = lhat, coord = coord, w_l = w_l,
 
-      w_unlabeled = w_unlabeled))
+      w_u = w_u))
 
   } else {
-    return(ppi_pointest)
+
+    return(est)
   }
 }
 
 #=== PPI++ LOGISTIC GRADIENT AND HESSIAN =======================================
 
-# """Computes the statistics needed for the logistic regression confidence interval.
-#
-#     Args:
-#         pointest (ndarray): Point estimate of the logistic regression coefficients.
-#         X (ndarray): Covariates corresponding to the gold-standard labels.
-#         Y (ndarray): Gold-standard labels.
-#         Yhat (ndarray): Predictions corresponding to the gold-standard labels.
-#         X_unlabeled (ndarray): Covariates corresponding to the unlabeled data.
-#         Yhat_unlabeled (ndarray): Predictions corresponding to the unlabeled data.
-#         w (ndarray, optional): Standard errors of the gold-standard labels.
-#         w_unlabeled (ndarray, optional): Standard errors of the unlabeled data.
-#         use_unlabeled (bool, optional): Whether to use the unlabeled data.
-#
-#     Returns:
-#         grads (ndarray): Gradient of the loss function on the labeled data.
-#         grads_hat (ndarray): Gradient of the loss function on the labeled predictions.
-#         grads_hat_unlabeled (ndarray): Gradient of the loss function on the unlabeled predictions.
-#         inv_hessian (ndarray): Inverse Hessian of the loss function on the unlabeled data.
-#     """
+#' Logistic Regression Gradient and Hessian
+#'
+#' @description
+#' Computes the statistics needed for the logstic regression-based
+#' prediction-powered inference.
+#'
+#' @param est (vector): Point estimates of the coefficients.
+#'
+#' @param X_l (matrix): Covariates for the labeled data set.
+#'
+#' @param Y_l (vector): Labels for the labeled data set.
+#'
+#' @param f_l (vector): Predictions for the labeled data set.
+#'
+#' @param X_u (matrix): Covariates for the unlabeled data set.
+#'
+#' @param f_u (vector): Predictions for the unlabeled data set.
+#'
+#' @param w_l (vector, optional): Sample weights for the labeled data set.
+#'
+#' @param w_u (vector, optional): Sample weights for the unlabeled data set.
+#'
+#' @param use_u (bool, optional): Whether to use the unlabeled data set.
+#'
+#' @returns (list): A list containing the following:
+#'
+#' \describe{
+#'    \item{grads}{(matrix): n x p matrix gradient of the loss function with
+#'    respect to the coefficients.}
+#'    \item{grads_hat}{(matrix): n x p matrix gradient of the loss function
+#'    with respect to the coefficients, evaluated using the labeled
+#'    predictions.}
+#'    \item{grads_hat_unlabeled}{(matrix): N x p matrix gradient of the loss
+#'    function with respect to the coefficients, evaluated using the unlabeled
+#'    predictions.}
+#'    \item{inv_hessian}{(matrix): p x p matrix inverse Hessian of the loss
+#'    function with respect to the coefficients.}
+#' }
+#'
+#' @examples
+#'
+#' dat <- simdat_logistic()
+#'
+#' form <- Y - Yhat ~ Xc
+#'
+#' X_l <- model.matrix(form, data = dat[dat$set == "tst",])
+#'
+#' Y_l <- dat[dat$set == "tst", all.vars(form)[1]] |> matrix(ncol = 1)
+#'
+#' f_l <- dat[dat$set == "tst", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' X_u <- model.matrix(form, data = dat[dat$set == "val",])
+#'
+#' f_u <- dat[dat$set == "val", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' n <- nrow(X_l)
+#'
+#' p <- ncol(X_l)
+#'
+#' N <- nrow(X_u)
+#'
+#' est <- plusplus_logistic_est(X_l, Y_l, f_l, X_u, f_u, n, p, N)
+#'
+#' w_l <- rep(1, n)
+#'
+#' w_u <- rep(1, N)
+#'
+#' stats <- logistic_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u, use_u = TRUE)
+#'
+#' @export
 
-logistic_get_stats <- function(pointest, X, Y, Yhat, X_unlabeled,
+logistic_get_stats <- function(est, X_l, Y_l, f_l, X_u, f_u,
 
-  Yhat_unlabeled, w = NULL, w_unlabeled = NULL, use_unlabeled = TRUE) {
+  w_l = NULL, w_u = NULL, use_u = TRUE) {
 
-  n <- nrow(Y)
-  d <- ncol(X)
-  N <- nrow(Yhat_unlabeled)
+  n <- nrow(Y_l)
+  p <- ncol(X_l)
+  N <- nrow(f_u)
 
-  if (is.null(w)) w <- rep(1, n) else w <- w / sum(w) * n
+  if (is.null(w_l)) w_l <- rep(1, n) else w_l <- w_l / sum(w_l) * n
 
-  if (is.null(w_unlabeled)) w_unlabeled <- rep(1, N) else w_unlabeled <- w_unlabeled / sum(w_unlabeled) * N
+  if (is.null(w_u)) w_u <- rep(1, N) else w_u <- w_u / sum(w_u) * N
 
-  mu <- plogis(X %*% pointest)
+  mu_l <- plogis(X_l %*% est)
 
-  mu_til <- plogis(X_unlabeled %*% pointest)
+  mu_u <- plogis(X_u %*% est)
 
-  hessian <- matrix(0, nrow = d, ncol = d)
+  hessian <- matrix(0, nrow = p, ncol = p)
 
-  grads_hat_unlabeled <- matrix(0, nrow = N, ncol = d)
+  grads_hat_unlabeled <- matrix(0, nrow = N, ncol = p)
 
-  if (use_unlabeled) {
+  if (use_u) {
 
     for (i in 1:N) {
 
-      hessian <- hessian + w_unlabeled[i] / (N + n) * mu_til[i] * (1 - mu_til[i]) * tcrossprod(X_unlabeled[i, ])
+      hessian <- hessian + w_u[i] / (N + n) * mu_u[i] * (1 - mu_u[i]) *
 
-      grads_hat_unlabeled[i, ] <- w_unlabeled[i] * X_unlabeled[i, ] * (mu_til[i] - Yhat_unlabeled[i])
+        tcrossprod(X_u[i, ])
+
+      grads_hat_unlabeled[i, ] <- w_u[i] * X_u[i, ] * (mu_u[i] - f_u[i])
     }
   }
 
-  grads <- matrix(0, nrow = n, ncol = d)
+  grads <- matrix(0, nrow = n, ncol = p)
 
-  grads_hat <- matrix(0, nrow = n, ncol = d)
+  grads_hat <- matrix(0, nrow = n, ncol = p)
 
   for (i in 1:n) {
 
-    if (use_unlabeled) {
+    if (use_u) {
 
-      hessian <- hessian + w[i] / (N + n) * mu[i] * (1 - mu[i]) * tcrossprod(X[i, ])
+      hessian <- hessian + w_l[i] / (N + n) * mu_l[i] * (1 - mu_l[i]) *
+
+        tcrossprod(X_l[i, ])
 
     } else {
 
-      hessian <- hessian + w[i] / n * mu[i] * (1 - mu[i]) * tcrossprod(X[i, ])
+      hessian <- hessian + w_l[i] / n * mu_l[i] * (1 - mu_l[i]) *
+
+        tcrossprod(X_l[i, ])
     }
 
-    grads[i, ] <- w[i] * X[i, ] * (mu[i] - Y[i])
+    grads[i, ] <- w_l[i] * X_l[i, ] * (mu_l[i] - Y_l[i])
 
-    grads_hat[i, ] <- w[i] * X[i, ] * (mu[i] - Yhat[i])
+    grads_hat[i, ] <- w_l[i] * X_l[i, ] * (mu_l[i] - f_l[i])
   }
 
   inv_hessian <- solve(hessian)
@@ -199,58 +286,110 @@ logistic_get_stats <- function(pointest, X, Y, Yhat, X_unlabeled,
 
 #=== PPI++ LOGISTIC REGRESSION =================================================
 
-# """Computes the prediction-powered confidence interval for the logistic regression coefficients using the PPI++ algorithm from `[ADZ23] <https://arxiv.org/abs/2311.01453>`__.
-#
-#     Args:
-#         X (ndarray): Covariates corresponding to the gold-standard labels.
-#         Y (ndarray): Gold-standard labels.
-#         Yhat (ndarray): Predictions corresponding to the gold-standard labels.
-#         X_unlabeled (ndarray): Covariates corresponding to the unlabeled data.
-#         Yhat_unlabeled (ndarray): Predictions corresponding to the unlabeled data.
-#         alpha (float, optional): Error level; the confidence interval will target a coverage of 1 - alpha. Must be in the range (0, 1).
-#         alternative (str, optional): Alternative hypothesis, either 'two-sided', 'larger' or 'smaller'.
-#         lhat (float, optional): Power-tuning parameter (see `[ADZ23] <https://arxiv.org/abs/2311.01453>`__). The default value `None` will estimate the optimal value from data. Setting `lhat=1` recovers PPI with no power tuning, and setting `lhat=0` recovers the classical CLT interval.
-#         coord (int, optional): Coordinate for which to optimize `lhat`. If `None`, it optimizes the total variance over all coordinates. Must be in {1, ..., d} where d is the shape of the estimand.
-#         optimizer_options (dict, ooptional): Options to pass to the optimizer. See scipy.optimize.minimize for details.
-#         w (ndarray, optional): Weights for the labeled data. If None, it is set to 1.
-#         w_unlabeled (ndarray, optional): Weights for the unlabeled data. If None, it is set to 1.
-#
-#     Returns:
-#         tuple: Lower and upper bounds of the prediction-powered confidence interval for the logistic regression coefficients.
-#
-#     Notes:
-#         `[ADZ23] <https://arxiv.org/abs/2311.01453>`__ A. N. Angelopoulos, J. C. Duchi, and T. Zrnic. PPI++: Efficient Prediction Powered Inference. arxiv:2311.01453, 2023.
-#     """
+#' PPI++ Logistic Regression Estimator and Inference
+#'
+#' @description
+#' Computes the prediction-powered confidence interval for the logistic
+#' regression coefficients using the PPI++ algorithm.
+#'
+#' @param X_l (matrix): n x p matrix of covariates in the labeled data.
+#'
+#' @param Y_l (vector): n-vector of labeled outcomes.
+#'
+#' @param f_l (vector): n-vector of predictions in the labeled data.
+#'
+#' @param X_u (matrix): N x p matrix of covariates in the unlabeled data.
+#'
+#' @param f_u (vector): N-vector of predictions in the unlabeled data.
+#'
+#' @param n (int): Number of labeled observations.
+#'
+#' @param p (int): Number of covariates (features) of interest.
+#'
+#' @param N (int): Number of unlabeled observations.
+#'
+#' @param alpha (float): Significance level in \[0,1\]
+#'
+#' @param alternative (string): Alternative hypothesis, either 'two-sided',
+#' 'larger' or 'smaller'.
+#'
+#' @param lhat (float, optional): Power-tuning parameter.
+#' The default value `NULL` will estimate the optimal value from data.
+#' Setting `lhat = 1` recovers PPI with no power tuning.
+#' Setting `lhat = 0` recovers the classical point estimate.
+#'
+#' @param coord (int, optional): Coordinate for which to optimize `lhat`.
+#' If `None`, it optimizes the total variance over all coordinates.
+#' Must be in {1, ..., p} where p is the shape of the estimand.
+#'
+#' @param opts (list, optional): Options to pass to the optimizer.
+#' See ?optim for details.
+#'
+#' @param w_l (vector, optional): n-vector of sample weights for the
+#' labeled data.
+#'
+#' @param w_u (vector, optional): N-vector of sample weights for the
+#' unlabeled data.
+#'
+#' @returns (list): A list containing the following:
+#'
+#' \describe{
+#'    \item{est}{(vector): p-vector of PPI++ logistic regression coefficient
+#'    estimates.}
+#'    \item{se}{(vector): p-vector of standard errors of the coefficients.}
+#' }
+#'
+#' @examples
+#'
+#' dat <- simdat_logistic()
+#'
+#' form <- Y - Yhat ~ Xc
+#'
+#' X_l <- model.matrix(form, data = dat[dat$set == "tst",])
+#'
+#' Y_l <- dat[dat$set == "tst", all.vars(form)[1]] |> matrix(ncol = 1)
+#'
+#' f_l <- dat[dat$set == "tst", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' X_u <- model.matrix(form, data = dat[dat$set == "val",])
+#'
+#' f_u <- dat[dat$set == "val", all.vars(form)[2]] |> matrix(ncol = 1)
+#'
+#' n <- nrow(X_l)
+#'
+#' p <- ncol(X_l)
+#'
+#' N <- nrow(X_u)
+#'
+#' plusplus_logistic(X_l, Y_l, f_l, X_u, f_u, n, p, N)
+#'
+#' @import stats
+#'
+#' @export
 
-ppi_logistic_ci <- function(X, Y, Yhat, X_unlabeled, Yhat_unlabeled,
+plusplus_logistic <- function(X_l, Y_l, f_l, X_u, f_u, n, p, N, alpha = 0.05,
 
-  alpha = 0.05, alternative = "two-sided", lhat = NULL, coord = NULL,
+  alternative = "two-sided", lhat = NULL, coord = NULL, opts = NULL,
 
-  optimizer_options = NULL, w = NULL, w_unlabeled = NULL) {
+  w_l = NULL, w_u = NULL) {
 
-  n <- nrow(Y)
-  d <- ncol(X)
-  N <- nrow(Yhat_unlabeled)
+  n <- nrow(Y_l)
+  p <- ncol(X_l)
+  N <- nrow(f_u)
 
-  w <- if (is.null(w)) rep(1, n) else w / sum(w) * n
+  w_l <- if (is.null(w_l)) rep(1, n) else w_l / sum(w_l) * n
 
-  w_unlabeled <- if (is.null(w_unlabeled)) rep(1, N) else w_unlabeled / sum(w_unlabeled) * N
+  w_u <- if (is.null(w_u)) rep(1, N) else w_u / sum(w_u) * N
 
-  use_unlabeled <- is.null(lhat) || lhat != 0
+  use_u <- is.null(lhat) || lhat != 0
 
-  cat("use_unlabeled:", use_unlabeled, "\n")
+  est <- plusplus_logistic_est(X_l, Y_l, f_l, X_u, f_u, n, p, N, opts = opts,
 
-  ppi_pointest <- ppi_logistic_pointestimate(X, Y, Yhat, X_unlabeled,
+    lhat = lhat, coord = coord, w_l = w_l, w_u = w_u)
 
-    Yhat_unlabeled, optimizer_options = optimizer_options, lhat = lhat,
+  stats <- logistic_get_stats(est, X_l, Y_l, f_l, X_u, f_u, w_l, w_u,
 
-    coord = coord, w = w, w_unlabeled = w_unlabeled)
-
-  cat("ppi_pointest:", ppi_pointest, "\n")
-
-  stats <- logistic_get_stats(ppi_pointest, X, Y, Yhat, X_unlabeled,
-
-    Yhat_unlabeled, w, w_unlabeled, use_unlabeled = use_unlabeled)
+    use_u = use_u)
 
   if (is.null(lhat)) {
 
@@ -258,30 +397,20 @@ ppi_logistic_ci <- function(X, Y, Yhat, X_unlabeled, Yhat_unlabeled,
 
       stats$grads_hat_unlabeled, stats$inv_hessian, clip = TRUE)
 
-    cat("lhat:", lhat, "\n")
+    return(plusplus_logistic(X_l, Y_l, f_l, X_u, f_u, n, p, N,
 
-    return(ppi_logistic_ci(X, Y, Yhat, X_unlabeled, Yhat_unlabeled,
+      alpha = alpha, opts = opts, alternative = alternative,
 
-      alpha = alpha, optimizer_options = optimizer_options,
-
-      alternative = alternative, lhat = lhat, coord = coord, w = w,
-
-      w_unlabeled = w_unlabeled))
+      lhat = lhat, coord = coord, w_l = w_l, w_u = w_u))
   }
 
-  var_unlabeled <- cov(lhat * stats$grads_hat_unlabeled)
+  var_u <- cov(lhat * stats$grads_hat_unlabeled)
 
-  cat("var_unlabeled:", var_unlabeled, "\n")
+  var_l <- cov(stats$grads - lhat * stats$grads_hat)
 
-  var <- cov(stats$grads - lhat * stats$grads_hat)
+  Sigma_hat <- stats$inv_hessian %*% (n/N * var_u + var_l) %*% stats$inv_hessian
 
-  cat("var:", var, "\n")
-
-  Sigma_hat <- stats$inv_hessian %*% (n / N * var_unlabeled + var) %*% stats$inv_hessian
-
-  cat("Sigma_hat:", Sigma_hat, "\n")
-
-  return(zconfint_generic(ppi_pointest, sqrt(diag(Sigma_hat) / n),
+  return(zconfint_generic(est, sqrt(diag(Sigma_hat) / n),
 
     alpha = alpha, alternative = alternative))
 }
