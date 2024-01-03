@@ -32,8 +32,6 @@ compute_cdf <- function(Y, grid, w = NULL) {
 
     ncol = length(grid))
 
-  write.csv(indicators, "indicators_r.csv")
-
   cdf_mn <- apply(indicators, 2, mean)
 
   cdf_sd <- apply(indicators, 2, sd) * sqrt((n - 1) / n)
@@ -196,6 +194,8 @@ rectified_p_value <- function(rectifier, rectifier_std,
 #'
 #' dat <- simdat()
 #'
+#' form <- Y - Yhat ~ X1
+#'
 #' Y_l <- dat[dat$set == "tst", all.vars(form)[1]] |> matrix(ncol = 1)
 #'
 #' f_l <- dat[dat$set == "tst", all.vars(form)[2]] |> matrix(ncol = 1)
@@ -272,6 +272,8 @@ plusplus_quantile_est <- function(Y_l, f_l, f_u, q, exact_grid = FALSE,
 #' @examples
 #'
 #' dat <- simdat()
+#'
+#' form <- Y - Yhat ~ X1
 #'
 #' Y_l <- dat[dat$set == "tst", all.vars(form)[1]] |> matrix(ncol = 1)
 #'
